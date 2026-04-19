@@ -68,7 +68,8 @@ flowchart LR
 
 ## Screenshots
 
-_Add screenshots of login, dashboard with two chats, typing indicator, and notifications/DLQ demo here for portfolio pages._
+<img width="1438" height="899" alt="image" src="https://github.com/user-attachments/assets/c88ad9a1-e7c2-4f57-a721-af14e1c6b912" />
+
 
 ---
 
@@ -148,27 +149,6 @@ Full table of contents: **[`docs/README.md`](docs/README.md)**.
 | [19-common-bugs-and-fixes.md](docs/19-common-bugs-and-fixes.md) | Troubleshooting |
 | [20-cheat-sheet.md](docs/20-cheat-sheet.md) | One-page revision |
 
----
-
-## Why this project is strong (engineering lens)
-
-1. **Split real-time from durable state** — Messages are authoritative in Postgres; sockets are a cache invalidation / push layer, with Redis bridging processes.
-2. **Horizontal fan-out** — `publishFanout` + subscriber in `server.ts` avoids “only the instance that handled HTTP knows about the socket.”
-3. **At-least-once style async work** — Queue jobs with retries and DLQ mirror how production systems isolate flaky downstream work.
-4. **Keyset pagination** — Message history uses cursor + composite index, not naive `OFFSET`.
-5. **Clear module boundaries** — Auth, conversations, messages, notifications, queue, redis, socket, worker are separable concerns.
-
----
-
-## How to explain this project in an interview
-
-**One sentence (recruiter):** “It’s a Slack-style chat app where messages save to a database, appear instantly through WebSockets, and if you’re not looking at the chat you still get updated through the same connection; background jobs handle notification processing with retries.”
-
-**One sentence (engineer):** “Express + Prisma API with Socket.IO, Redis Pub/Sub for cross-node fan-out to rooms, Postgres with cursor pagination, and a worker consuming a DB-backed queue with exponential backoff and DLQ—structured so an SQS swap is mostly the queue provider.”
-
-**If they ask “what did you learn?”:** Mention sticky sessions vs Redis fan-out, why queues beat synchronous push in the request path, and tradeoffs of JWT in `localStorage` for a demo vs cookies in production.
-
----
 
 ## License
 
