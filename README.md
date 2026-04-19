@@ -100,14 +100,6 @@ Demo accounts: `alice@example.com`, `bob@example.com`, `carol@example.com` — p
 
 ---
 
-## Local development (no Docker)
-
-See **[`docs/11-local-setup-and-running.md`](docs/11-local-setup-and-running.md)** for prerequisites, env files, and multi-terminal layout.
-
-Short version: run Postgres + Redis, `backend` with `npm run dev`, `worker` with `npm run worker`, `frontend` with `npm run dev` (Vite proxies `/api` and `/socket.io`).
-
----
-
 ## Testing
 
 ```bash
@@ -116,40 +108,3 @@ cd backend && npx prisma migrate deploy && npm test
 
 # Frontend
 cd frontend && npm test
-```
-
-Details: **[`docs/12-testing-and-debugging.md`](docs/12-testing-and-debugging.md)**.
-
----
-
-## Documentation index
-
-Full table of contents: **[`docs/README.md`](docs/README.md)**.
-
-| Doc | Topic |
-|-----|--------|
-| [01-project-overview.md](docs/01-project-overview.md) | Problem, users, workflows, interview summaries |
-| [02-architecture.md](docs/02-architecture.md) | System design, diagrams, module responsibilities |
-| [03-backend-walkthrough.md](docs/03-backend-walkthrough.md) | Backend structure and request paths |
-| [04-frontend-walkthrough.md](docs/04-frontend-walkthrough.md) | UI, state, sockets, chat UX |
-| [05-database-schema.md](docs/05-database-schema.md) | Prisma models, indexes, pagination |
-| [06-realtime-flow.md](docs/06-realtime-flow.md) | Socket.IO, rooms, Redis fan-out |
-| [07-notification-queue-retries-dlq.md](docs/07-notification-queue-retries-dlq.md) | Queue, worker, DLQ, SQS mapping |
-| [08-authentication-and-security.md](docs/08-authentication-and-security.md) | JWT, hashing, CORS, limits |
-| [09-api-reference.md](docs/09-api-reference.md) | REST endpoints |
-| [10-socket-events.md](docs/10-socket-events.md) | Socket event catalog |
-| [11-local-setup-and-running.md](docs/11-local-setup-and-running.md) | Runbooks |
-| [12-testing-and-debugging.md](docs/12-testing-and-debugging.md) | Tests, manual scenarios, debug |
-| [13-deployment-and-docker.md](docs/13-deployment-and-docker.md) | Dockerfiles, compose, prod notes |
-| [14-performance-and-scalability.md](docs/14-performance-and-scalability.md) | Scale story |
-| [15-tradeoffs-and-future-improvements.md](docs/15-tradeoffs-and-future-improvements.md) | Tradeoffs, roadmap |
-| [16-interview-prep.md](docs/16-interview-prep.md) | Questions, STAR, cheat sheet |
-| [17-codebase-file-map.md](docs/17-codebase-file-map.md) | Where to look in code |
-| [18-demo-script.md](docs/18-demo-script.md) | Live demo script |
-| [19-common-bugs-and-fixes.md](docs/19-common-bugs-and-fixes.md) | Troubleshooting |
-| [20-cheat-sheet.md](docs/20-cheat-sheet.md) | One-page revision |
-
-
-## License
-
-MIT (sample / portfolio use).
