@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+}
+
+enum ParticipantRole {
+  MEMBER
+  ADMIN
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
+enum NotificationType {
+  NEW_MESSAGE
+  MENTION
+  ADDED_TO_GROUP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum QueueJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  name         String
+  passwordHash String    @map("password_hash")
+  avatarUrl    String?   @map("avatar_url")
+  isOnline     Boolean   @default(false) @map("is_online")
+  lastSeenAt   DateTime? @map("last_seen_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  sentMessages              Message[]                 @relation("MessageSender")
+  participants              ConversationParticipant[]
+  notifications             Notification[]
+  createdConversations      Conversation[]            @relation("ConversationCreator")
+  directConversationsAsA    DirectConversationKey[]   @relation("UserA")
+  directConversationsAsB    DirectConversationKey[]   @relation("UserB")
+}
+
+model Conversation {
+  id        String           @id @default(uuid())
+  type      ConversationType
+  name      String?
+  createdBy String           @map("created_by")
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  creator       User                      @relation("ConversationCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  participants  ConversationParticipant[]
+  messages      Message[]
+  directKey     DirectConversationKey?
+
+  @@index([createdBy])
+  @@index([updatedAt(sort: Desc)])
+}
+
+/// Ensures at most one DIRECT conversation per unordered user pair
+model DirectConversationKey {
+  id             String   @id @default(uuid())
+  conversationId String   @unique @map("conversation_id")
+  userIdLow      String   @map("user_id_low")
+  userIdHigh     String   @map("user_id_high")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userLow      User         @relation("UserA", fields: [userIdLow], references: [id], onDelete: Cascade)
+  userHigh     User         @relation("UserB", fields: [userIdHigh], references: [id], onDelete: Cascade)
+
+  @@unique([userIdLow, userIdHigh])
+  @@index([userIdLow])
+  @@index([userIdHigh])
+}
+
+model ConversationParticipant {
+  id                 String          @id @default(uuid())
+  conversationId     String          @map("conversation_id")
+  userId             String          @map("user_id")
+  joinedAt           DateTime        @default(now()) @map("joined_at")
+  role               ParticipantRole @default(MEMBER)
+  lastReadMessageId  String?         @map("last_read_message_id")
+  unreadCount        Int             @default(0) @map("unread_count")
+
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadMessage Message?     @relation("LastRead", fields: [lastReadMessageId], references: [id], onDelete: SetNull)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([conversationId])
+}
+
+model Message {
+  id             String        @id @default(uuid())
+  conversationId String        @map("conversation_id")
+  senderId       String        @map("sender_id")
+  content        String
+  type           MessageType   @default(TEXT)
+  status         MessageStatus @default(SENT)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  deliveredAt    DateTime?     @map("delivered_at")
+  readAt         DateTime?     @map("read_at")
+  deletedAt      DateTime?     @map("deleted_at")
+  metadata       Json?         @db.JsonB
+
+  conversation       Conversation              @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender             User                      @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  lastReadReferences ConversationParticipant[] @relation("LastRead")
+
+  @@index([conversationId, createdAt(sort: Desc)])
+  @@index([senderId])
+  @@index([conversationId])
+}
+
+model Notification {
+  id         String             @id @default(uuid())
+  userId     String             @map("user_id")
+  type       NotificationType
+  title      String
+  body       String
+  data       Json?              @db.JsonB
+  status     NotificationStatus @default(PENDING)
+  retryCount Int                @default(0) @map("retry_count")
+  readAt     DateTime?          @map("read_at")
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model QueueJob {
+  id            String         @id @default(uuid())
+  type          String
+  payload       Json           @db.JsonB
+  status        QueueJobStatus @default(PENDING)
+  retryCount    Int            @default(0) @map("retry_count")
+  maxRetries    Int            @default(5) @map("max_retries")
+  lastError     String?        @map("last_error")
+  availableAt   DateTime       @default(now()) @map("available_at")
+  lockedAt      DateTime?      @map("locked_at")
+  lockedBy      String?        @map("locked_by")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  @@index([status, availableAt])
+  @@index([type])
+}
+
+model DeadLetterJob {
+  id            String   @id @default(uuid())
+  originalJobId String   @map("original_job_id")
+  type          String
+  payload       Json     @db.JsonB
+  error         String
+  retryCount    Int      @map("retry_count")
+  failedAt      DateTime @default(now()) @map("failed_at")
+
+  @@index([failedAt(sort: Desc)])
+}
